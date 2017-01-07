@@ -21,7 +21,7 @@ class SIPHandler(socketserver.DatagramRequestHandler):
         # Leyendo línea a línea lo que nos envía el cliente
         line = self.rfile.read()
         Request = line.decode('utf-8')
-        print("El cliente nos manda: " + Request)
+        print("El proxy nos manda: " + Request)
 
         if Request.startswith('INVITE'):
             self.wfile.write(b"SIP/2.0 100 Trying\r\n")
@@ -42,14 +42,22 @@ class SIPHandler(socketserver.DatagramRequestHandler):
             self.wfile.write(b"SIP/2.0 405 Method Not Allowed\r\n\r\n")
 
 if __name__ == "__main__":
-    # Creamos servidor de eco y escuchamos
-    if len(sys.argv) != 4:
-        sys.exit("Usage: python3 server.py IP Port Audio_File")
-
+    # Creamos servidor
     try:
+        config = sys.argv[1]
+        info = ET.parse(str(config))
+        root = info.getroot()
+        server_port = root.find("uaserver").attrib["port"]
+        ip = root.find("uaserver").attrib["ip"]
+        rtp_port = root.find("rtpaudio").attrib["port"]
+
+        if len(sys.argv) != 2:
+            sys.exit("Usage: python3 uaserver.py Config")
+
+
         serv = socketserver.UDPServer(('', PORT), SIPHandler)
         print("Listening...")
         serv.serve_forever()
 
     except:
-        sys.exit("Usage: python3 server.py IP Port Audio_File")
+        sys.exit("Usage: python3 uaserver.py Config")
