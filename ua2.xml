@@ -1,0 +1,14 @@
+<config>
+  <account username="joey@centralperk.com" passwd="friends">
+  </account>
+  <uaserver ip="" port="3040">
+  </uaserver>
+  <rtpaudio port="4040">
+  </rtpaudio>
+  <regproxy ip="127.0.0.1" port="5060">
+  </regproxy>
+  <log path="user_joey.log">
+  </log>
+  <audio path="cancion.mp3">
+  </audio>
+</config>
