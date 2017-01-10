@@ -9,6 +9,8 @@ import sys
 import os
 from xml.sax import make_parser
 from xml.sax import ContentHandler
+import hashlib
+import time
 
 #
 #Condiciones de entrada
@@ -58,34 +60,45 @@ my_socket.connect((proxy_ip, int(proxy_port)))
 # FALTA AÑADIR EL 'Starting...' AL FICHERO LOG
 ######
 
-#Estructura de mensaje REGISTER
-REGISTER = 'REGISTER sip:'
-REGISTER += username + ':' + server_port
-REGISTER += ' SIP/2.0\r\n'
-REGISTER += 'Expires:' + OPTION + '\r\n'
-#Estructura de mensaje INVITE
-INVITE = 'INVITE sip:' + OPTION + ' SIP/2.0\r\n'
-#Estructura de mensaje ACK
-ACK = 'ACK sip:'+ OPTION + ' SIP/2.0\r\n'
-#Estructura de mensaje BYE
-BYE = 'BYE sip:'+ OPTION + ' SIP/2.0\r\n'
+#Actuaciones en función del método especificado por el cliente
+if METHOD == "REGISTER":
+	#Estructura de mensaje REGISTER
+	Request = 'REGISTER sip:'
+	Request += username + ':' + server_port
+	Request += ' SIP/2.0\r\n'
+	Request += 'Expires:' + OPTION + '\r\n'
 
+elif METHOD == "INVITE":
+	#Estructura de mensaje INVITE
+	Request = 'INVITE sip:' + OPTION + ' SIP/2.0\r\n'
 
+elif METHOD == "BYE":
+	#Estructura de mensaje BYE
+	Request = 'BYE sip:'+ OPTION + ' SIP/2.0\r\n'
 
-if METHOD == "INVITE":
-    print("Enviando: " , INVITE)
-    my_socket.send(bytes(INVITE, 'utf-8') + b'\r\n')
-    data = my_socket.recv(1024)
-    Reply = data.decode('utf-8')
-
+####PASAR PRINT AL LOG
+print("Enviando: " , Request)
+####PASAR PRINT AL LOG
+my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
+data = my_socket.recv(1024)
+Reply = data.decode('utf-8')
+####PASAR PRINT AL LOG
 print('Recibido -- ', Reply)
-if Reply == "SIP/2.0 100 Trying\r\nSIP/2.0 180 Ring\r\nSIP/2.0 200 OK\r\n\r\n":
-    print("Enviando: " + ACK)
+####PASAR PRINT AL LOG
+
+if Reply[1] == '100' and Reply[4] == '180' and Reply[7] == '200':
+	#Estructura de mensaje ACK
+	ACK = 'ACK sip:'+ OPTION + ' SIP/2.0\r\n'
     my_socket.send(bytes(ACK, 'utf-8') + b'\r\n')
     data = my_socket.recv(1024)
-    print("Enviando: " + BYE)
-    my_socket.send(bytes(BYE, 'utf-8') + b'\r\n')
-    data = my_socket.recv(1024)
+	####PASAR PRINT AL LOG
+	print("Enviando: " + ACK)
+	####PASAR PRINT AL LOG
+elif Reply [2] == 401:
+	nonce = data[6].split(=)[1].split(")
+    #######TRAZA#######
+	print("NONCE-----> " + nonce)
+	#######TRAZA#######
 
 print("Terminando socket...")
 
