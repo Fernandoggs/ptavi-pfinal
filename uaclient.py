@@ -54,16 +54,27 @@ my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 my_socket.connect((proxy_ip, int(proxy_port)))
 
-#Contenido que vamos a enviar
-REQUEST = METHOD + ' sip:' + NICK + ' SIP/2.0\r\n'
-ACK = 'ACK sip:'+ NICK + ' SIP/2.0\r\n'
-BYE = 'BYE sip:'+ NICK + ' SIP/2.0\r\n'
+######
+# FALTA AÑADIR EL 'Starting...' AL FICHERO LOG
+######
+
+#Estructura de mensaje REGISTER
+REGISTER = 'REGISTER sip:'
+REGISTER += username + ':' + server_port
+REGISTER += ' SIP/2.0\r\n'
+REGISTER += 'Expires:' + OPTION + '\r\n'
+#Estructura de mensaje INVITE
+INVITE = 'INVITE sip:' + OPTION + ' SIP/2.0\r\n'
+#Estructura de mensaje ACK
+ACK = 'ACK sip:'+ OPTION + ' SIP/2.0\r\n'
+#Estructura de mensaje BYE
+BYE = 'BYE sip:'+ OPTION + ' SIP/2.0\r\n'
 
 
 
 if METHOD == "INVITE":
-    print("Enviando: " , REQUEST)
-    my_socket.send(bytes(REQUEST, 'utf-8') + b'\r\n')
+    print("Enviando: " , INVITE)
+    my_socket.send(bytes(INVITE, 'utf-8') + b'\r\n')
     data = my_socket.recv(1024)
     Reply = data.decode('utf-8')
 
