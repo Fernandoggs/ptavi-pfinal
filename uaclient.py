@@ -8,22 +8,19 @@ import socket
 import sys
 
 #Condiciones de entrada
-if not len(sys.argv) == 3:
-	sys.exit("Usage: python client.py method receiver@IPReceiver:SIPport")
-if str(sys.argv[2].find('@')) == -1:
-    sys.exit("Usage: python client.py method receiver@IPReceiver:SIPport")
-if str(sys.argv[2].find(':')) == -1:
-    sys.exit("Usage: python client.py method receiver@IPReceiver:SIPport")
-if sys.argv[1] != 'INVITE' and sys.argv[1] != 'BYE':
-    sys.exit("Usage: python client.py method receiver@IPReceiver:SIPport")
+if not len(sys.argv) != 4:
+	sys.exit("Usage: python uaclient.py config method opcion")
 
+"""
+Extracción de lo introducido por la linea de comandos
+"""
+#Fichero de configuración del UA
+CONFIG = sys.argv[1]
 #Metodo que quiere enviar el cliente
-METHOD = sys.argv[1]
+METHOD = sys.argv[2]
+#Opción elegida de inicio
+OPTION = sys.argv[3]
 
-#Cadena con informacion del destinatario
-log_str = str(sys.argv[2])
-
-#Dirección IP del servidor
 
 server_aux = log_str.split('@')[1]
 SERVER = server_aux.split(':')[0]
