@@ -71,7 +71,7 @@ if METHOD == "REGISTER":
 elif METHOD == "INVITE":
 	#Estructura de mensaje INVITE
 	Request = 'INVITE sip:' + OPTION + ' SIP/2.0\r\n'
-
+    ####FALTA SDP
 elif METHOD == "BYE":
 	#Estructura de mensaje BYE
 	Request = 'BYE sip:'+ OPTION + ' SIP/2.0\r\n'
@@ -79,7 +79,9 @@ elif METHOD == "BYE":
 ####PASAR PRINT AL LOG
 print("Enviando: " , Request)
 ####PASAR PRINT AL LOG
+#Envio Request al Proxy
 my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
+#Recibo contestacion
 data = my_socket.recv(1024)
 Reply = data.decode('utf-8')
 ####PASAR PRINT AL LOG
@@ -89,17 +91,37 @@ print('Recibido -- ', Reply)
 if Reply[1] == '100' and Reply[4] == '180' and Reply[7] == '200':
 	#Estructura de mensaje ACK
 	ACK = 'ACK sip:'+ OPTION + ' SIP/2.0\r\n'
-    my_socket.send(bytes(ACK, 'utf-8') + b'\r\n')
-    data = my_socket.recv(1024)
 	####PASAR PRINT AL LOG
 	print("Enviando: " + ACK)
 	####PASAR PRINT AL LOG
+    my_socket.send(bytes(ACK, 'utf-8') + b'\r\n')
+    data = my_socket.recv(1024)
+
 elif Reply [2] == 401:
-	nonce = data[6].split(=)[1].split(")
-    #######TRAZA#######
+	aux = hashlib.md5()
+	nonce = data[6].split(=)[1].split(=)
+	#######TRAZA#######
 	print("NONCE-----> " + nonce)
 	#######TRAZA#######
-
+	aux.update(bytes(password,'utf-8') + bytes(nonce,'utf-8'))
+	response = aux.hexdigest()
+	#Estructura de REGISTER con autorizacion
+	Request = 'REGISTER sip:'
+	Request += username + ':' + server_port
+	Request += ' SIP/2.0\r\n'
+	Request += 'Expires:' + OPTION + '\r\n'
+	Request += 'Authorization: Digest response= ' + response
+	####PASAR PRINT AL LOG
+	print("Enviando REGISTER con Autorización: " , Request)
+	####PASAR PRINT AL LOG
+    #Envio REGISTER con Autorización al Proxy
+	my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
+   #Recibo contestacion
+   data = my_socket.recv(1024)
+   Reply = data.decode('utf-8')
+   ####PASAR PRINT AL LOG
+   print('Recibido -- ', Reply)
+   ####PASAR PRINT AL LOG
 print("Terminando socket...")
 
 #Cerramos todo
