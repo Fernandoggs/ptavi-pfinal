@@ -59,7 +59,8 @@ server_name = info[0][1]['name']
 server_ip = info[0][1]['ip']
 server_port = info[0][1]['port']
 registered_fich = info[1][1]['path']
-passwd_fich = info[1][1]['passwdpath']
+passwd_fich = open(info[1][1]['passwdpath'],'r')
+passwords = passwd_fich.readlines()
 log_fich = info[2][1]['path']
 nonce = random.randint(0,99999999999999999)
 
@@ -68,15 +69,15 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
     SIP REGISTER server class
     """
-    users_dicc: {}
+    users_dicc = {}
     #Abro el fichero de registro de clientes en modo escritura
     def register2json(self):
-        json.dump(self.users_dicc, open(registered_fich,'w'))
+        json.dump(self.users_dicc,open(registered_fich,'w'))
 
     #Compruebo si existe el fichero y lo leo
     def json2registered(self):
         try:
-            with open(registered_fich) as registered_file:
+            with open(registered_fich,'w') as registered_file:
                 self.users_dicc = json.load(registered_file)
         except:
             self.register2json()
@@ -104,16 +105,26 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                 del self.users_dicc[register_user]
         self.wfile.write(b"SIP/2.0 200 0K\r\n")
         self.delete()
-        self.register2json
+        self.register2json()
 
     def handle(self):
+        #Registra ip y puerto del clente (client_address)
+        self.json2registered()
+
         while 1:
             line = self.rfile.read()
             if not line:
                 break
-            request = line.decode('utf-8').split()
+            request = line.decode('utf-8')
             print("El cliente nos manda: " + request)
             ###HACER LOG
+
+            if request[0] == 'REGISTER':
+                if 'Authorization:' in request:
+                    response = request[-1]
+                    client = request[1].split(':')[1]
+                    client_port = request[1].split(':')[-1]
+
 
 
 
