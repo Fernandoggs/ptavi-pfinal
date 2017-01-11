@@ -1,14 +1,8 @@
 <config>
-  <account username="fernandisco@yelp.com" passwd="hey">
-  </account>
-  <uaserver ip="" port="3060">
-  </uaserver>
-  <rtpaudio port="5060">
-  </rtpaudio>
-  <regproxy ip="127.0.0.1" port="4060">
-  </regproxy>
-  <log path="fernandisco.log">
-  </log>
-  <audio path="cancion.mp3">
-  </audio>
+  <account username="chandler@centralperk.com" passwd="friends"/>
+  <uaserver ip="" port="3060"/>
+  <rtpaudio port="4060"/>
+  <regproxy ip="127.0.0.1" port="5060"/>
+  <log path="user_chandler.log"/>
+  <audio path="cancion.mp3"/>
 </config>
