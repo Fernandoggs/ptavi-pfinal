@@ -1,0 +1,5 @@
+<config>
+  <server name="Proxy_Server" ip="127.0.0.1" port="5060"/>
+  <database path="registered_clients.json" passwdpath="passwords.txt"/>
+  <log path="proxy_log.log"/>
+</config>
