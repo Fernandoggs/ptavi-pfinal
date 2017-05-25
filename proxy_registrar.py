@@ -51,7 +51,7 @@ parser.setContentHandler(proxy_handler)
 parser.parse(open(CONFIG))
 info = proxy_handler.get_tags()
 #######TRAZA#######
-print(info)
+##print(info)
 #######TRAZA#######
 
 #Extrae la informacion del fichero de configuración
@@ -63,7 +63,7 @@ passwd_fich = open(info[1][1]['passwdpath'],'r')
 passwords = passwd_fich.readlines()
 log_fich = info[2][1]['path']
 nonce = random.randint(0,99999999999999999)
-
+##print(nonce)
 #Usuarios registrados
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
@@ -77,7 +77,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     #Compruebo si existe el fichero y lo leo
     def json2registered(self):
         try:
-            with open(registered_fich,'w') as registered_file:
+            with open(registered_fich) as registered_file:
                 self.users_dicc = json.load(registered_file)
         except:
             self.register2json()
@@ -110,20 +110,41 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     def handle(self):
         #Registra ip y puerto del clente (client_address)
         self.json2registered()
+        client_ip = self.client_address[0]
+        client_port = self.client_address[1]
 
         while 1:
             line = self.rfile.read()
             if not line:
                 break
             request = line.decode('utf-8')
-            print("El cliente nos manda: " + request)
+            print("El cliente nos manda--> " + request)
             ###HACER LOG
-
-            if request[0] == 'REGISTER':
+            METHOD = request.split(' ')[0]
+            if METHOD == 'REGISTER':
                 if 'Authorization:' in request:
-                    response = request[-1]
-                    client = request[1].split(':')[1]
-                    client_port = request[1].split(':')[-1]
+                    print("EEEEEEEEEEEEEEYYYYYYYYYYYYY")
+                ##if request[2].split(' ')[0] != 'Authorization:':
+                    reply = "SIP/2.0 200 OK\r\n"
+                    ##reply += "WWW Authenticate: nonce=" + str(nonce)
+                    ####PASAR PRINT AL LOG
+                    print("Enviando: " + reply)
+                    self.wfile.write(bytes(reply, "utf-8"))
+                else:
+                    reply = "SIP/2.0 401 Unauthorized\r\n"
+                    reply += "WWW Authenticate: nonce=" + str(nonce)
+                    ####PASAR PRINT AL LOG
+                    print("Enviando: " + reply)
+                    self.wfile.write(bytes(reply, "utf-8"))
+                    ##response = request[-1]
+                    ##client = request[1].split(':')[1]
+                    ##client_port = request[1].split(':')[-1]
+
+
+
+
+
+
 
 
 
