@@ -123,8 +123,16 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             METHOD = request.split(' ')[0]
             if METHOD == 'REGISTER':
                 if 'Authorization:' in request:
-                    print("EEEEEEEEEEEEEEYYYYYYYYYYYYY")
-                ##if request[2].split(' ')[0] != 'Authorization:':
+                    response = request[-1]
+                    client = request.split(':')[1]
+                    client_port = request.split('.com:')[1].split(' S')[0]
+                    print("#####-----TRAZA-----#####")
+                    print("Response: " + response)
+                    print("Client: " + client)
+                    print("Port: " + client_port)
+
+                    print("#####-----TRAZA-----#####")
+
                     reply = "SIP/2.0 200 OK\r\n"
                     ##reply += "WWW Authenticate: nonce=" + str(nonce)
                     ####PASAR PRINT AL LOG
@@ -136,9 +144,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     ####PASAR PRINT AL LOG
                     print("Enviando: " + reply)
                     self.wfile.write(bytes(reply, "utf-8"))
-                    ##response = request[-1]
-                    ##client = request[1].split(':')[1]
-                    ##client_port = request[1].split(':')[-1]
+
 
 
 
