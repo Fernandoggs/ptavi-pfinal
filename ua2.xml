@@ -1,8 +1,8 @@
 <config>
-  <account username="joey@centralperk.com" passwd="friends"/>
+  <account username="harveyspecter@pearsonhardman.com" passwd="boss"/>
   <uaserver ip="" port="3040"/>
   <rtpaudio port="4040"/>
   <regproxy ip="127.0.0.1" port="5060"/>
-  <log path="user_joey.log"/>
+  <log path="user_HarveySpecter.log"/>
   <audio path="cancion.mp3"/>
 </config>
