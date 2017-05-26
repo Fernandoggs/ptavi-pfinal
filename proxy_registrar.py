@@ -70,48 +70,49 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     SIP REGISTER server class
     """
     users_dicc = {}
-    #Abro el fichero de registro de clientes en modo escritura
-    def register2json(self):
-        json.dump(self.users_dicc,open(registered_fich,'w'))
 
     #Compruebo si existe el fichero y lo leo
-    def json2registered(self):
-        try:
-            with open(registered_fich) as registered_file:
-                self.users_dicc = json.load(registered_file)
-        except:
-            self.register2json()
+    ##def json2registered(self):
+        ##try:
+            ##with open(registered_fich) as registered_file:
+                ##self.users_dicc = json.load(registered_file)
+        ##except:
+            ##self.register2json()
+    #Abro el fichero de registro de clientes en modo escritura
+    ##def register2json(self):
+        ##json.dump(self.users_dicc,open(registered_fich,'w'))
+
 
     #Borra usuarios del registro de usuarios registrados
-    def delete(self):
-        aux_list = []
-        for user in self.users_dicc:
-            expires = int(self.users_dicc[user][-1])
-            if expires < time.time():
-                aux_list.append(user)
-        for client in aux_list:
-            del self.users_dicc[client]
-            print('Deleting: ',client)
+    ##def delete(self):
+        ##aux_list = []
+        ##for user in self.users_dicc:
+            ##expires = int(self.users_dicc[user][-1])
+            ##if expires < time.time():
+                ##aux_list.append(user)
+        ##for client in aux_list:
+            ##del self.users_dicc[client]
+            ##print('Deleting: ',client)
 
 
     #Registro de nuevos Usuarios
-    def register(self,client_expire,register_user,client_address,client_port):
-        self.json2registered()
-        self.time = float(time.time())
-        self.time_expire = float(time.time()) + float(client_expire)
-        self.client_info=[client_address,client_port,self.time,self.time_expire]
-        self.users_dicc[register_user] = self.client_info
-        if int(register_time) == 0:
-                del self.users_dicc[register_user]
-        self.wfile.write(b"SIP/2.0 200 0K\r\n")
-        self.delete()
-        self.register2json()
+    ##def register(self,client_expire,register_user,client_address,client_port):
+        ##self.json2registered()
+        ##self.time = float(time.time())
+        ##self.time_expire = float(time.time()) + float(client_expire)
+        ##self.client_info=[client_address,client_port,self.time,self.time_expire]
+        ##self.users_dicc[register_user] = self.client_info
+        ##if int(register_time) == 0:
+                ##del self.users_dicc[register_user]
+        ##self.wfile.write("SIP/2.0 200 0K\r\n")
+        ##self.delete()
+        ##self.register2json()
 
     def handle(self):
-        #Registra ip y puerto del clente (client_address)
-        self.json2registered()
-        client_ip = self.client_address[0]
-        client_port = self.client_address[1]
+        #Registra ip y puerto del cliente (client_address)
+        ##self.json2registered()
+        ##client_ip = self.client_address[0]
+        ##client_port = self.client_address[1]
 
         while 1:
             line = self.rfile.read()
@@ -124,13 +125,14 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             if METHOD == 'REGISTER':
                 if 'Authorization:' in request:
                     response = request[-1]
-                    client = request.split(':')[1]
-                    client_port = request.split('.com:')[1].split(' S')[0]
+                    user = request.split(':')[1]
+                    user_port = request.split('.com:')[1].split(' S')[0]
+                    user_exp = request.split('s:')[1].split('Au')[0]
                     print("#####-----TRAZA-----#####")
                     print("Response: " + response)
-                    print("Client: " + client)
-                    print("Port: " + client_port)
-
+                    print("User: " + user)
+                    print("Port: " + user_port)
+                    print("Expires: " + user_exp)
                     print("#####-----TRAZA-----#####")
 
                     reply = "SIP/2.0 200 OK\r\n"
