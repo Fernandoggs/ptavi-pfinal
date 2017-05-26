@@ -12,11 +12,33 @@ from xml.sax import ContentHandler
 import hashlib
 import time
 
+class UA_Constructor(ContentHandler):
+
+    def __init__(self):
+
+        self.tags = []
+        self.dicc = {'account': ['username', 'passwd'],
+                     'uaserver': ['ip', 'port'],
+                     'rtpaudio': ['port'],
+                     'regproxy': ['ip', 'port'],
+                     'log': ['path'],
+                     'audio': ['path']}
+
+    def startElement(self, name, attrs):
+
+        if name in self.dicc:
+            dicc_aux = {}
+            for atribute in self.dicc[name]:
+                dicc_aux[atribute] = attrs.get(atribute, "")
+            self.tags.append([name, dicc_aux])
+
+    def get_tags(self):
+        return self.tags
 #
 #Condiciones de entrada
 #
-if not len(sys.argv) != 4:
-	sys.exit("Usage: python uaclient.py config method opcion")
+if len(sys.argv) != 4:
+	sys.exit("Usage: python uaclient.py config method option")
 #
 #Extracción de lo introducido por la linea de comandos
 #
@@ -28,16 +50,16 @@ METHOD = sys.argv[2]
 OPTION = sys.argv[3]
 
 #
-#Fichero de configuración
+#Inicio del manejador
 #
 #Manejo del fichero de configuración
 parser = make_parser()
-client_handler = Kepp_uaXml()
+client_handler = UA_Constructor()
 parser.setContentHandler(client_handler)
 parser.parse(open(CONFIG))
 info = client_handler.get_tags()
 #######TRAZA#######
-print(info)
+##print(info)
 #######TRAZA#######
 
 #Extracción de la información de configuración
@@ -71,10 +93,21 @@ if METHOD == "REGISTER":
 elif METHOD == "INVITE":
 	#Estructura de mensaje INVITE
 	Request = 'INVITE sip:' + OPTION + ' SIP/2.0\r\n'
+	Request += 'Content-Type: application/sdp\r\n'
+	Request += 'v=0\r\n'
+	Request += 'o=' + username + ' ' + server_ip + '\r\n'
+	Request += 's=mysession\r\n'
+	Request += 't=0\r\n'
+	Request += 'm=audio ' + rtp_port + ' RTP\r\n'
+
     ####FALTA SDP
 elif METHOD == "BYE":
 	#Estructura de mensaje BYE
 	Request = 'BYE sip:'+ OPTION + ' SIP/2.0\r\n'
+else:
+    print("The method entered is wrong, it must be REGISTER, INVITE or BYE")
+    sys.exit("(Mind the capital letters)")
+
 
 ####PASAR PRINT AL LOG
 print("Enviando: " , Request)
@@ -87,41 +120,41 @@ Reply = data.decode('utf-8')
 ####PASAR PRINT AL LOG
 print('Recibido -- ', Reply)
 ####PASAR PRINT AL LOG
-
-if Reply[1] == '100' and Reply[4] == '180' and Reply[7] == '200':
-	#Estructura de mensaje ACK
-	ACK = 'ACK sip:'+ OPTION + ' SIP/2.0\r\n'
+code = Reply.split(' ')[1]
+print("Code = " + code)
+if code == '401':
+    aux = hashlib.md5()
+    nonce = Reply.split('=')[1]
+    aux.update(bytes(password,'utf-8') + bytes(nonce,'utf-8'))
+    response = aux.hexdigest()
+	#Estructura de REGISTER con autorizacion
+    Request = 'REGISTER sip:'
+    Request += username + ':' + server_port
+    Request += ' SIP/2.0\r\n'
+    Request += 'Expires:' + OPTION + '\r\n'
+    Request += 'Authorization: Digest response= ' + response
 	####PASAR PRINT AL LOG
-	print("Enviando: " + ACK)
+    print("Enviando REGISTER con Autorización: " , Request)
+	####PASAR PRINT AL LOG
+    #Envio REGISTER con Autorización al Proxy
+    my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
+    #Recibo contestacion
+    data = my_socket.recv(1024)
+    Reply = data.decode('utf-8')
+    ####PASAR PRINT AL LOG
+    print('Recibido -- ', Reply)
+    ####PASAR PRINT AL LOG
+"""
+elif Reply[1] == '100' and Reply[4] == '180' and Reply[7] == '200':
+	#Estructura de mensaje ACK
+    ACK = 'ACK sip:'+ OPTION + ' SIP/2.0\r\n'
+	####PASAR PRINT AL LOG
+    print("Enviando: " + ACK)
 	####PASAR PRINT AL LOG
     my_socket.send(bytes(ACK, 'utf-8') + b'\r\n')
     data = my_socket.recv(1024)
+"""
 
-elif Reply [2] == 401:
-	aux = hashlib.md5()
-	nonce = data[6].split(=)[1].split(=)
-	#######TRAZA#######
-	print("NONCE-----> " + nonce)
-	#######TRAZA#######
-	aux.update(bytes(password,'utf-8') + bytes(nonce,'utf-8'))
-	response = aux.hexdigest()
-	#Estructura de REGISTER con autorizacion
-	Request = 'REGISTER sip:'
-	Request += username + ':' + server_port
-	Request += ' SIP/2.0\r\n'
-	Request += 'Expires:' + OPTION + '\r\n'
-	Request += 'Authorization: Digest response= ' + response
-	####PASAR PRINT AL LOG
-	print("Enviando REGISTER con Autorización: " , Request)
-	####PASAR PRINT AL LOG
-    #Envio REGISTER con Autorización al Proxy
-	my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
-   #Recibo contestacion
-   data = my_socket.recv(1024)
-   Reply = data.decode('utf-8')
-   ####PASAR PRINT AL LOG
-   print('Recibido -- ', Reply)
-   ####PASAR PRINT AL LOG
 print("Terminando socket...")
 
 #Cerramos todo
