@@ -9,6 +9,7 @@ import sys
 import json
 import time
 import random
+import hashlib
 from xml.sax import make_parser
 from xml.sax import ContentHandler
 
@@ -54,15 +55,21 @@ info = proxy_handler.get_tags()
 ##print(info)
 #######TRAZA#######
 
+
 #Extrae la informacion del fichero de configuración
 server_name = info[0][1]['name']
 server_ip = info[0][1]['ip']
 server_port = info[0][1]['port']
 registered_fich = info[1][1]['path']
 passwd_fich = open(info[1][1]['passwdpath'],'r')
-passwords = passwd_fich.readlines()
 log_fich = info[2][1]['path']
-nonce = random.randint(0,99999999999999999)
+
+
+passwords = passwd_fich.readlines()#Extrae la informacion del archivo de contraseñas
+nonce = random.randint(0,99999999999999999)#Genera el nonce como num aleatorio
+aux = hashlib.md5()
+
+
 ##print(nonce)
 #Usuarios registrados
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
@@ -108,6 +115,8 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         self.delete()
         self.register2json()
 
+
+
     def handle(self):
         #Registra ip y puerto del cliente (client_address)
         self.json2registered()
@@ -125,33 +134,39 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             if METHOD == 'REGISTER':
                 if 'Authorization:' in request:
                     response = request[-1]
+                    print("Response: " + response)
+
                     user = request.split(':')[1]
                     user_port = request.split('.com:')[1].split(' S')[0]
                     user_exp = request.split('s:')[1].split('Au')[0]
-                    self.register(user_exp,user,client_ip,user_port)
+                    # Genero el response q tengo q comprobar con el response recibido del UA
+                    for line in passwords:
+                        if line.split()[0] == user:
+                            u_pass = line.split()[-1]
+                            aux.update(bytes(u_pass,'utf-8') + bytes(str(nonce),'utf-8'))
+                            my_response = aux.hexdigest()
+                            print("EEEEEEEEEEEH")
+                            print("Pass_Found=" + u_pass + "====")
+                            print("My_Response = " + my_response)
+                            print("EEEEEEEEEEEH")
+                            if my_response == response:
+                                self.register(user_exp,user,client_ip,user_port)
+                                reply = "SIP/2.0 200 OK\r\n"
+                            else:
+                                reply = "SIP/2.0 404 User Not Found\r\n"
+                            ####PASAR PRINT AL LOG
+                            print("Enviando: " + reply)
+                            self.wfile.write(bytes(reply, "utf-8"))
 
-                    reply = "SIP/2.0 200 OK\r\n"
-                    ##reply += "WWW Authenticate: nonce=" + str(nonce)
-                    ####PASAR PRINT AL LOG
-                    print("Enviando: " + reply)
-                    self.wfile.write(bytes(reply, "utf-8"))
+
                 else:
                     reply = "SIP/2.0 401 Unauthorized\r\n"
                     reply += "WWW Authenticate: nonce=" + str(nonce)
+                    user = request.split(':')[1]
                     ####PASAR PRINT AL LOG
                     print("Enviando: " + reply)
+                    ####PASAR PRINT AL LOG
                     self.wfile.write(bytes(reply, "utf-8"))
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     serv = socketserver.UDPServer(('', int(server_port)), SIPRegisterHandler)
