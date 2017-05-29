@@ -67,7 +67,7 @@ log_fich = info[2][1]['path']
 
 passwords = passwd_fich.readlines()#Extrae la informacion del archivo de contraseñas
 nonce = random.randint(0,99999999999999999)#Genera el nonce como num aleatorio
-aux = hashlib.md5()
+#aux = hashlib.md5()
 
 
 ##print(nonce)
@@ -133,8 +133,8 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             METHOD = request.split(' ')[0]
             if METHOD == 'REGISTER':
                 if 'Authorization:' in request:
-                    response = request[-1]
-                    print("Response: " + response)
+                    response = request.split('=')[1].split('\r')[0]
+                    print("Response=" + response + "=======")
 
                     user = request.split(':')[1]
                     user_port = request.split('.com:')[1].split(' S')[0]
@@ -142,12 +142,15 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     # Genero el response q tengo q comprobar con el response recibido del UA
                     for line in passwords:
                         if line.split()[0] == user:
+                            aux = hashlib.md5()
                             u_pass = line.split()[-1]
                             aux.update(bytes(u_pass,'utf-8') + bytes(str(nonce),'utf-8'))
                             my_response = aux.hexdigest()
                             print("EEEEEEEEEEEH")
+                            print("My nonce--> " + str(nonce))
                             print("Pass_Found=" + u_pass + "====")
-                            print("My_Response = " + my_response)
+                            print("My_Response =" + my_response + "====")
+                            print("Aux= " + (str(aux)))
                             print("EEEEEEEEEEEH")
                             if my_response == response:
                                 self.register(user_exp,user,client_ip,user_port)
