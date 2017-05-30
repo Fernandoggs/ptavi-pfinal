@@ -146,7 +146,6 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                             print("Sending-- " + reply)
                             self.wfile.write(bytes(reply, "utf-8"))
 
-
                 else:
                     reply = "SIP/2.0 401 Unauthorized\r\n"
                     reply += "WWW Authenticate: nonce=" + str(nonce)
@@ -155,6 +154,16 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     print("Sending-- " + reply)
                     ####PASAR PRINT AL LOG
                     self.wfile.write(bytes(reply, "utf-8"))
+
+            elif METHOD == 'INVITE':
+                self.json2registered()
+                user_to = request.split(':')[1].split(' ')[0]
+                print("user_to--" + user_to + "--")
+                if user_to in self.users_dicc.keys():
+                    print("Usuario encontrado")
+                else:
+                    print(user_to + " is offline ")
+
             else:
                 reply = "SIP/2.0 405 Method Not Allowed\r\n"
                 print("Sending-- " + reply)
