@@ -87,11 +87,18 @@ class SIP_UA_Handler(socketserver.DatagramRequestHandler):
                 self.wfile.write(bytes(reply,'utf-8'))
                 print("Sending-- " + reply)
             elif METHOD == 'ACK':
-                print("ACK received")
+                aEjecutar = "./mp32rtp -i " + server_ip
+                aEjecutar += " -p " + rtp_port + " < " + audio_path
+                print("Vamos a ejecutar", aEjecutar)
+                os.system(aEjecutar)
             elif METHOD == 'BYE':
-                print("BYE received")
+                reply = "SIP/2.0 200 OK\r\n"
+                self.wfile.write(bytes(reply,'utf-8'))
+                print("Sending-- " + reply)
             else:
-                print("Entra en else")
+                reply = "SIP/2.0 405 Method Not Allowed\r\n"
+                self.wfile.write(bytes(reply,'utf-8'))
+                print("Sending-- " + reply)
 
 if __name__ == "__main__":
     serv = socketserver.UDPServer(('', int(server_port)), SIP_UA_Handler)
@@ -100,16 +107,3 @@ if __name__ == "__main__":
         serv.serve_forever()
     except KeyboardInterrupt:
         print("Finishing server...")
-    # Creamos servidor
-    #if len(sys.argv) != 2:
-        #sys.exit("Usage: python3 uaserver.py Config")
-
-        #config = sys.argv[1]
-        #info = ET.parse(str(config))
-        #root = info.getroot()
-        #server_port = root.find("uaserver").attrib["port"]
-        #ip = root.find("uaserver").attrib["ip"]
-        #Empty IP check
-        #if ip == '':
-            #ip = '127.0.0.1'
-        #rtp_port = root.find("rtpaudio").attrib["port"]
