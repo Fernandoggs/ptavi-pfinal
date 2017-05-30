@@ -72,7 +72,6 @@ proxy_ip = info[3][1]['ip']
 proxy_port = info[3][1]['port']
 log_path = info[4][1]['path']
 audio_path = info[5][1]['path']
-
 #Creamos el socket, lo configuramos y lo atamos a un servidor/puerto
 my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -81,62 +80,38 @@ my_socket.connect((proxy_ip, int(proxy_port)))
 ######
 # FALTA AÑADIR EL 'Starting...' AL FICHERO LOG
 ######
+try:
+    #Actuaciones en función del método especificado por el cliente
+    if METHOD == "REGISTER":
+	    #Estructura de mensaje REGISTER
+	    Request = 'REGISTER sip:'
+	    Request += username + ':' + server_port
+	    Request += ' SIP/2.0\r\n'
+	    Request += 'Expires:' + OPTION + '\r\n'
 
-#Actuaciones en función del método especificado por el cliente
-if METHOD == "REGISTER":
-	#Estructura de mensaje REGISTER
-	Request = 'REGISTER sip:'
-	Request += username + ':' + server_port
-	Request += ' SIP/2.0\r\n'
-	Request += 'Expires:' + OPTION + '\r\n'
+    elif METHOD == "INVITE":
+	    #Estructura de mensaje INVITE
+	    Request = 'INVITE sip:' + OPTION + ' SIP/2.0\r\n'
+	    Request += 'Content-Type: application/sdp\r\n\r\n'
+	    Request += 'v=0\r\n'
+	    Request += 'o=' + username + ' ' + server_ip + '\r\n'
+	    Request += 's=mysession\r\n'
+	    Request += 't=0\r\n'
+	    Request += 'm=audio ' + rtp_port + ' RTP\r\n'
 
-elif METHOD == "INVITE":
-	#Estructura de mensaje INVITE
-	Request = 'INVITE sip:' + OPTION + ' SIP/2.0\r\n'
-	Request += 'Content-Type: application/sdp\r\n'
-	Request += 'v=0\r\n'
-	Request += 'o=' + username + ' ' + server_ip + '\r\n'
-	Request += 's=mysession\r\n'
-	Request += 't=0\r\n'
-	Request += 'm=audio ' + rtp_port + ' RTP\r\n'
-
-    ####FALTA SDP
-elif METHOD == "BYE":
-	#Estructura de mensaje BYE
-	Request = 'BYE sip:'+ OPTION + ' SIP/2.0\r\n'
-else:
-    print("The method entered is wrong, it must be REGISTER, INVITE or BYE")
-    sys.exit("(Mind the capital letters)")
+    elif METHOD == "BYE":
+	    #Estructura de mensaje BYE
+	    Request = 'BYE sip:'+ OPTION + ' SIP/2.0\r\n'
+    else:
+	    Request = METHOD + ' sip:'+ OPTION + ' SIP/2.0\r\n'
+        #print("The method entered is wrong, it must be REGISTER, INVITE or BYE")
+        #sys.exit("(Mind the capital letters)")
 
 
-####PASAR PRINT AL LOG
-print("Enviando: " , Request)
-####PASAR PRINT AL LOG
-#Envio Request al Proxy
-my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
-#Recibo contestacion
-data = my_socket.recv(1024)
-Reply = data.decode('utf-8')
-####PASAR PRINT AL LOG
-print('Recibido -- ', Reply)
-####PASAR PRINT AL LOG
-code = Reply.split(' ')[1]
-print("Code = " + code)
-if code == '401':
-    aux = hashlib.md5()
-    nonce = Reply.split('=')[1]
-    aux.update(bytes(password,'utf-8') + bytes(nonce,'utf-8'))
-    response = aux.hexdigest()
-	#Estructura de REGISTER con autorizacion
-    Request = 'REGISTER sip:'
-    Request += username + ':' + server_port
-    Request += ' SIP/2.0\r\n'
-    Request += 'Expires:' + OPTION + '\r\n'
-    Request += 'Authorization: Digest response= ' + response
-	####PASAR PRINT AL LOG
-    print("Enviando REGISTER con Autorización: " , Request)
-	####PASAR PRINT AL LOG
-    #Envio REGISTER con Autorización al Proxy
+    ####PASAR PRINT AL LOG
+    print("Enviando: " , Request)
+    ####PASAR PRINT AL LOG
+    #Envio Request al Proxy
     my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
     #Recibo contestacion
     data = my_socket.recv(1024)
@@ -144,19 +119,37 @@ if code == '401':
     ####PASAR PRINT AL LOG
     print('Recibido -- ', Reply)
     ####PASAR PRINT AL LOG
-"""
-elif Reply[1] == '100' and Reply[4] == '180' and Reply[7] == '200':
-	#Estructura de mensaje ACK
-    ACK = 'ACK sip:'+ OPTION + ' SIP/2.0\r\n'
-	####PASAR PRINT AL LOG
-    print("Enviando: " + ACK)
-	####PASAR PRINT AL LOG
-    my_socket.send(bytes(ACK, 'utf-8') + b'\r\n')
-    data = my_socket.recv(1024)
-"""
+    code = Reply.split(' ')[1]
+    if Reply[1] == '401':
+        aux = hashlib.md5()
+        nonce = Reply.split('=')[1]
+        aux.update(bytes(password,'utf-8') + bytes(nonce,'utf-8'))
+        response = aux.hexdigest()
+	    #Estructura de REGISTER con autorizacion
+        Request = 'REGISTER sip:'
+        Request += username + ':' + server_port
+        Request += ' SIP/2.0\r\n'
+        Request += 'Expires:' + OPTION + '\r\n'
+        Request += 'Authorization: Digest response=' + response
+	    ####PASAR PRINT AL LOG
+        print("Sending REGISTER (+login): " , Request)
+	    ####PASAR PRINT AL LOG
+        #Envio REGISTER con Autorización al Proxy
+        my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
+        #Recibo contestacion
+        data = my_socket.recv(1024)
+        Reply = data.decode('utf-8')
+        ####PASAR PRINT AL LOG
+        print('Recibido -- ', Reply)
+    else:
+        ####PASAR PRINT AL LOG
+        print('Recibo otra cosa')
 
-print("Terminando socket...")
+    print("Finishing socket...")
+
+except ConnectionRefusedError:
+    print("ERROR")
+    print("Finishing socket")
 
 #Cerramos todo
 my_socket.close()
-print("Fin.")
