@@ -4,7 +4,9 @@
 Clase (y programa principal) para un servidor SIP Register simple
 """
 
+
 import socketserver
+import socket
 import sys
 import json
 import time
@@ -36,7 +38,7 @@ class Proxy_Constructor(ContentHandler):
 #Condiciones de entrada
 #
 if not len(sys.argv) != 1:
-	sys.exit("Usage: python uaserver.py config")
+	sys.exit("Usage: python3 proxy_registrar.py config")
 #
 #Extracción de lo introducido por la linea de comandos
 #
@@ -64,7 +66,6 @@ log_fich = info[2][1]['path']
 passwords = passwd_fich.readlines()#Extrae la informacion del archivo de contraseñas
 nonce = random.randint(0,99999999999999999)#Genera el nonce como num aleatorio
 
-#Usuarios registrados
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
     SIP REGISTER server class
@@ -156,13 +157,33 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     self.wfile.write(bytes(reply, "utf-8"))
 
             elif METHOD == 'INVITE':
+                #reply = "SIP/2.0 100 Trying\r\n"
+                #user = request.split(':')[1]
+                ####PASAR PRINT AL LOG
+                #print("Sending-- " + reply)
+                ####PASAR PRINT AL LOG
+                #self.wfile.write(bytes(reply, "utf-8"))
                 self.json2registered()
                 user_to = request.split(':')[1].split(' ')[0]
-                print("user_to--" + user_to + "--")
                 if user_to in self.users_dicc.keys():
-                    print("Usuario encontrado")
+                    receiver_ip = self.users_dicc[user_to][0]
+                    receiver_port = int(self.users_dicc[user_to][1])
+                    reply = request
+                    try:
+                        my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                        my_socket.connect((receiver_ip, receiver_port))
+                        my_socket.send(bytes(reply,'utf-8'))
+#########################################################################################EXCEPT_SOCKET#########
+                    except ConnectionRefusedError:
+                        print("FFFFFFFAAAAAAAAIIIIIIILLLLLL")
+#########################################################################################EXCEPT_SOCKET#########
+
                 else:
-                    print(user_to + " is offline ")
+                    reply = "SIP/2.0 404 User Not Found\r\n"
+                    ####PASAR PRINT AL LOG
+                    print("Sending-- " + reply)
+                    self.wfile.write(bytes(reply, "utf-8"))
 
             else:
                 reply = "SIP/2.0 405 Method Not Allowed\r\n"
