@@ -51,10 +51,6 @@ proxy_handler = Proxy_Constructor()
 parser.setContentHandler(proxy_handler)
 parser.parse(open(CONFIG))
 info = proxy_handler.get_tags()
-#######TRAZA#######
-##print(info)
-#######TRAZA#######
-
 
 #Extrae la informacion del fichero de configuración
 server_name = info[0][1]['name']
@@ -67,10 +63,7 @@ log_fich = info[2][1]['path']
 
 passwords = passwd_fich.readlines()#Extrae la informacion del archivo de contraseñas
 nonce = random.randint(0,99999999999999999)#Genera el nonce como num aleatorio
-#aux = hashlib.md5()
 
-
-##print(nonce)
 #Usuarios registrados
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
@@ -128,14 +121,12 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             if not line:
                 break
             request = line.decode('utf-8')
-            print("El cliente nos manda--> " + request)
+            print("\r\nReceiving-- " + request)
             ###HACER LOG
             METHOD = request.split(' ')[0]
             if METHOD == 'REGISTER':
                 if 'Authorization:' in request:
                     response = request.split('=')[1].split('\r')[0]
-                    print("Response=" + response + "=======")
-
                     user = request.split(':')[1]
                     user_port = request.split('.com:')[1].split(' S')[0]
                     user_exp = request.split('s:')[1].split('Au')[0]
@@ -146,19 +137,13 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                             u_pass = line.split()[-1]
                             aux.update(bytes(u_pass,'utf-8') + bytes(str(nonce),'utf-8'))
                             my_response = aux.hexdigest()
-                            print("EEEEEEEEEEEH")
-                            print("My nonce--> " + str(nonce))
-                            print("Pass_Found=" + u_pass + "====")
-                            print("My_Response =" + my_response + "====")
-                            print("Aux= " + (str(aux)))
-                            print("EEEEEEEEEEEH")
                             if my_response == response:
                                 self.register(user_exp,user,client_ip,user_port)
                                 reply = "SIP/2.0 200 OK\r\n"
                             else:
                                 reply = "SIP/2.0 404 User Not Found\r\n"
                             ####PASAR PRINT AL LOG
-                            print("Enviando: " + reply)
+                            print("Sending-- " + reply)
                             self.wfile.write(bytes(reply, "utf-8"))
 
 
@@ -167,17 +152,17 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     reply += "WWW Authenticate: nonce=" + str(nonce)
                     user = request.split(':')[1]
                     ####PASAR PRINT AL LOG
-                    print("Enviando: " + reply)
+                    print("Sending-- " + reply)
                     ####PASAR PRINT AL LOG
                     self.wfile.write(bytes(reply, "utf-8"))
             else:
                 reply = "SIP/2.0 405 Method Not Allowed\r\n"
-                print("Enviando: " + reply)
+                print("Sending-- " + reply)
                 self.wfile.write(bytes(reply, "utf-8"))
 
 if __name__ == "__main__":
     serv = socketserver.UDPServer(('', int(server_port)), SIPRegisterHandler)
-    print("Server " + server_name + " listening at port: " + server_port + "...")
+    print("\r\nServer " + server_name + " listening at port: " + server_port + "...")
     #Se crea esta excepción para q al salir del servidor con crtl+c salga el mensaje de Finalizado
     try:
         serv.serve_forever()
