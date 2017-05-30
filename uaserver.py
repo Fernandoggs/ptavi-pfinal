@@ -66,31 +66,26 @@ class SIP_UA_Handler(socketserver.DatagramRequestHandler):
     """
     SIP User Agent server class
     """
-    users_dicc = {}
-
     def handle(self):
         while 1:
             line = self.rfile.read()
             if not line:
                 break
             request = line.decode('utf-8')
-            print("\r\nReceiving-- " + request)
+            print("\r\nReceiving from proxy-- " + request)
             METHOD = request.split(' ')[0]
             if METHOD == 'INVITE':
-				reply += "SIP/2.0 180 Ring\r\n"
-				reply += "SIP/2.0 200 OK\r\n"
-                print("Sending-- " + reply)
+                self.wfile.write(b"SIP/2.0 100 Trying\r\n")
+                self.wfile.write(b"SIP/2.0 180 Ring\r\n")
+                reply = "SIP/2.0 200 OK\r\n"
+                reply += 'Content-Type: application/sdp\r\n\r\n'
+                reply += 'v=0\r\n'
+                reply += 'o=' + username + ' ' + server_ip + '\r\n'
+                reply += 's=mysession\r\n'
+                reply += 't=0\r\n'
+                reply += 'm=audio ' + rtp_port + ' RTP\r\n'
                 self.wfile.write(bytes(reply,'utf-8'))
-                #Estructura de mensaje 200 OK
-
-                rtp = 'Content-Type: application/sdp\r\n\r\n'
-                rtp += 'v=0\r\n'
-                rtp += 'o=' + username + ' ' + server_ip + '\r\n'
-                rtp += 's=mysession\r\n'
-                rtp += 't=0\r\n'
-                rtp += 'm=audio ' + rtp_port + ' RTP\r\n'
                 print("Sending-- " + reply)
-                self.wfile.write(bytes(reply + rtp,'utf-8'))
             elif METHOD == 'ACK':
                 print("ACK received")
             elif METHOD == 'BYE':
