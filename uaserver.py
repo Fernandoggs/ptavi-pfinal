@@ -1,15 +1,12 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""
-Clase (y programa principal) para un servidor de eco en UDP simple
-"""
 import sys
 import socketserver
 import socket
 import os
 from xml.sax import make_parser
 from xml.sax import ContentHandler
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
 import time
 
 class Server_Constructor(ContentHandler):
@@ -80,7 +77,24 @@ class SIP_UA_Handler(socketserver.DatagramRequestHandler):
             print("\r\nReceiving-- " + request)
             METHOD = request.split(' ')[0]
             if METHOD == 'INVITE':
-                print("Recibido INVITE")
+				reply += "SIP/2.0 180 Ring\r\n"
+				reply += "SIP/2.0 200 OK\r\n"
+                print("Sending-- " + reply)
+                self.wfile.write(bytes(reply,'utf-8'))
+                #Estructura de mensaje 200 OK
+
+                rtp = 'Content-Type: application/sdp\r\n\r\n'
+                rtp += 'v=0\r\n'
+                rtp += 'o=' + username + ' ' + server_ip + '\r\n'
+                rtp += 's=mysession\r\n'
+                rtp += 't=0\r\n'
+                rtp += 'm=audio ' + rtp_port + ' RTP\r\n'
+                print("Sending-- " + reply)
+                self.wfile.write(bytes(reply + rtp,'utf-8'))
+            elif METHOD == 'ACK':
+                print("ACK received")
+            elif METHOD == 'BYE':
+                print("BYE received")
             else:
                 print("Entra en else")
 
