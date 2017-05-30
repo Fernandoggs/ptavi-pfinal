@@ -170,6 +170,10 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     print("Enviando: " + reply)
                     ####PASAR PRINT AL LOG
                     self.wfile.write(bytes(reply, "utf-8"))
+            else:
+                reply = "SIP/2.0 405 Method Not Allowed\r\n"
+                print("Enviando: " + reply)
+                self.wfile.write(bytes(reply, "utf-8"))
 
 if __name__ == "__main__":
     serv = socketserver.UDPServer(('', int(server_port)), SIPRegisterHandler)
