@@ -119,6 +119,9 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         #Comprobación de si ha expirado el tiempo de conexión de algún usuario
         if int(client_expire) == 0:
                 del self.users_dicc[register_user]
+                log_entry ="Deleting "+register_user+' ,expired time'
+                log_entry = log_entry.replace('\r\n',' ')
+                do_log(log_entry)
         self.wfile.write(b"SIP/2.0 200 0K\r\n")
         self.delete()
         self.register2json()
