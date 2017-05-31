@@ -71,8 +71,10 @@ def do_log(entry):
     log = open(log_fich, 'a+')
     log.write('\r\n' + time.strftime('%Y%m%d%H%M%S ', time.gmtime(time.time())) + entry)
     log.close()
-    #log= open(log_fich, 'w')
-    #log.close()
+
+def delete_log():
+    log= open(log_fich, 'w')
+    log.close()
 
 #Manejador de Registro SIP
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
@@ -133,9 +135,9 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             if not line:
                 break
             request = line.decode('utf-8')
-            entry ="Receiving from "+client_ip+':'+str(client_port) +' '+request.replace('\r\n',' ')
-            do_log(entry)
-            print("\r\nReceiving from Client-- " + request)
+            log_entry ="Received from "+client_ip+':'+str(client_port) +' '+request.replace('\r\n',' ')
+            do_log(log_entry)
+            print("\r\nReceived from Client-- " + request)
             METHOD = request.split(' ')[0]
 
             if METHOD == 'REGISTER':
@@ -153,20 +155,25 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                             my_response = aux.hexdigest()
                             if my_response == response:
                                 self.register(user_exp,user,client_ip,user_port)
+                                log_entry ="Registering "+user+' '+client_ip+':'+str(client_port)+' Expires:'+str(user_exp)
+                                log_entry = log_entry.replace('\r\n',' ')
+                                do_log(log_entry)
                                 reply = "SIP/2.0 200 OK\r\n"
                             else:
                                 reply = "SIP/2.0 404 User Not Found\r\n"
-                            ####PASAR PRINT AL LOG
-                            print("Sending to Client-- " + reply)
+
                             self.wfile.write(bytes(reply, "utf-8"))
+                            log_entry ="Sending to "+client_ip+':'+str(client_port) +' '+reply.replace('\r\n',' ')
+                            do_log(log_entry)
+                            print("Sending to Client-- " + reply)
                 else:
                     reply = "SIP/2.0 401 Unauthorized\r\n"
                     reply += "WWW Authenticate: nonce=" + str(nonce)
                     user = request.split(':')[1]
-                    ####PASAR PRINT AL LOG
-                    print("Sending to Client-- " + reply)
-                    ####PASAR PRINT AL LOG
                     self.wfile.write(bytes(reply, "utf-8"))
+                    log_entry ="Sending to "+client_ip+':'+str(client_port) +' '+reply.replace('\r\n',' ')
+                    do_log(log_entry)
+                    print("Sending to Client-- " + reply)
             elif METHOD == 'INVITE':
                 self.json2registered()
                 user_to = request.split(':')[1].split(' ')[0]
@@ -178,20 +185,27 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                         my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                         my_socket.connect((receiver_ip, receiver_port))
                         my_socket.send(bytes(request,'utf-8'))
+                        log_entry ="Sending to "+receiver_ip+':'+str(receiver_port) +' '+request.replace('\r\n',' ')
+                        do_log(log_entry)
                         print("Sending to Server-- " + request)
                     except ConnectionRefusedError:
                         print("ERROR: Connection Refused")
                     #Recibo contestacion
                     data = my_socket.recv(1024)
                     reply = data.decode('utf-8')
-                    print("Receiving from server:" + reply)
+                    log_entry ="Received from "+receiver_ip+':'+str(receiver_port) +' '+reply.replace('\r\n',' ')
+                    do_log(log_entry)
+                    print("Received from server:" + reply)
                     self.wfile.write(bytes(reply, 'utf-8'))
+                    log_entry ="Sending to "+client_ip+':'+str(client_port) +' '+reply.replace('\r\n',' ')
+                    do_log(log_entry)
                     print("Sending to Client-- " + reply)
                 else:
                     reply = "SIP/2.0 404 User Not Found\r\n"
-                    ####PASAR PRINT AL LOG
-                    print("Sending to Client-- " + reply)
                     self.wfile.write(bytes(reply, "utf-8"))
+                    log_entry ="Sending to "+client_ip+':'+str(client_port) +' '+reply.replace('\r\n',' ')
+                    do_log(log_entry)
+                    print("Sending to Client-- " + reply)
 
             elif METHOD == 'ACK':
                 self.json2registered()
@@ -204,14 +218,17 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                         my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                         my_socket.connect((receiver_ip, receiver_port))
                         my_socket.send(bytes(request,'utf-8'))
+                        log_entry ="Sending to "+receiver_ip+':'+str(receiver_port) +' '+request.replace('\r\n',' ')
+                        do_log(log_entry)
                         print("Sending to Server-- " + request)
                     except ConnectionRefusedError:
                         print("ERROR: Connection Refused")
                 else:
                     reply = "SIP/2.0 404 User Not Found\r\n"
-                    ####PASAR PRINT AL LOG
-                    print("Sending to Client-- " + reply)
                     self.wfile.write(bytes(reply, "utf-8"))
+                    log_entry ="Sending to "+client_ip+':'+str(client_port) +' '+reply.replace('\r\n',' ')
+                    do_log(log_entry)
+                    print("Sending to Client-- " + reply)
 
             elif METHOD == "BYE":
                 self.json2registered()
@@ -224,28 +241,38 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                         my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                         my_socket.connect((receiver_ip, receiver_port))
                         my_socket.send(bytes(request,'utf-8'))
+                        log_entry ="Sending to "+receiver_ip+':'+str(receiver_port) +' '+request.replace('\r\n',' ')
+                        do_log(log_entry)
                         print("Sending to Server-- " + request)
                     except ConnectionRefusedError:
                         print("ERROR: Connection Refused")
                     #Recibo contestacion
                     data = my_socket.recv(1024)
                     reply = data.decode('utf-8')
-                    print("Receiving from server:" + reply)
+                    log_entry ="Received from "+receiver_ip+':'+str(receiver_port) +' '+reply.replace('\r\n',' ')
+                    do_log(log_entry)
+                    print("Received from server:" + reply)
                     self.wfile.write(bytes(reply, 'utf-8'))
+                    log_entry ="Sending to "+client_ip+':'+str(client_port) +' '+reply.replace('\r\n',' ')
+                    do_log(log_entry)
                     print("Sending to Client-- " + reply)
                 else:
                     reply = "SIP/2.0 404 User Not Found\r\n"
-                    ####PASAR PRINT AL LOG
-                    print("Sending to Client-- " + reply)
                     self.wfile.write(bytes(reply, "utf-8"))
+                    log_entry ="Sending to "+client_ip+':'+str(client_port) +' '+reply.replace('\r\n',' ')
+                    do_log(log_entry)
+                    print("Sending to Client-- " + reply)
 
             else:
                 reply = "SIP/2.0 405 Method Not Allowed\r\n"
-                print("Sending-- " + reply)
                 self.wfile.write(bytes(reply, "utf-8"))
+                log_entry ="Sending to "+client_ip+':'+str(client_port) +' '+reply.replace('\r\n',' ')
+                do_log(log_entry)
+                print("Sending to Client-- " + reply)
 
 if __name__ == "__main__":
 
+    delete_log()
     serv = socketserver.UDPServer(('', int(server_port)), SIPRegisterHandler)
     entry = "Starting..."
     do_log(entry)
@@ -254,4 +281,6 @@ if __name__ == "__main__":
     try:
         serv.serve_forever()
     except KeyboardInterrupt:
+        entry = "Finishing..."
+        do_log(entry)
         print("----SERVER FINISHED----")
