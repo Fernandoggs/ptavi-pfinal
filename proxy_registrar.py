@@ -122,7 +122,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             if not line:
                 break
             request = line.decode('utf-8')
-            print("\r\nReceiving-- " + request)
+            print("\r\nReceiving from Client-- " + request)
             ###HACER LOG
             METHOD = request.split(' ')[0]
             if METHOD == 'REGISTER':
@@ -144,7 +144,7 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                             else:
                                 reply = "SIP/2.0 404 User Not Found\r\n"
                             ####PASAR PRINT AL LOG
-                            print("Sending-- " + reply)
+                            print("Sending to Client-- " + reply)
                             self.wfile.write(bytes(reply, "utf-8"))
 
                 else:
@@ -152,37 +152,80 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     reply += "WWW Authenticate: nonce=" + str(nonce)
                     user = request.split(':')[1]
                     ####PASAR PRINT AL LOG
-                    print("Sending-- " + reply)
+                    print("Sending to Client-- " + reply)
                     ####PASAR PRINT AL LOG
                     self.wfile.write(bytes(reply, "utf-8"))
 
             elif METHOD == 'INVITE':
-                #reply = "SIP/2.0 100 Trying\r\n"
-                #user = request.split(':')[1]
-                ####PASAR PRINT AL LOG
-                #print("Sending-- " + reply)
-                ####PASAR PRINT AL LOG
-                #self.wfile.write(bytes(reply, "utf-8"))
                 self.json2registered()
                 user_to = request.split(':')[1].split(' ')[0]
                 if user_to in self.users_dicc.keys():
                     receiver_ip = self.users_dicc[user_to][0]
                     receiver_port = int(self.users_dicc[user_to][1])
-                    reply = request
                     try:
                         my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                         my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                         my_socket.connect((receiver_ip, receiver_port))
-                        my_socket.send(bytes(reply,'utf-8'))
-#########################################################################################EXCEPT_SOCKET#########
+                        my_socket.send(bytes(request,'utf-8'))
+                        print("Sending to Server-- " + request)
                     except ConnectionRefusedError:
-                        print("FFFFFFFAAAAAAAAIIIIIIILLLLLL")
-#########################################################################################EXCEPT_SOCKET#########
-
+                        print("ERROR: Connection Refused")
+                    #Recibo contestacion
+                    data = my_socket.recv(1024)
+                    reply = data.decode('utf-8')
+                    print("Receiving from server:" + reply)
+                    self.wfile.write(bytes(reply, 'utf-8'))
+                    print("Sending to Client-- " + reply)
                 else:
                     reply = "SIP/2.0 404 User Not Found\r\n"
                     ####PASAR PRINT AL LOG
-                    print("Sending-- " + reply)
+                    print("Sending to Client-- " + reply)
+                    self.wfile.write(bytes(reply, "utf-8"))
+
+            elif METHOD == 'ACK':
+                self.json2registered()
+                user_to = request.split(':')[1].split(' ')[0]
+                if user_to in self.users_dicc.keys():
+                    receiver_ip = self.users_dicc[user_to][0]
+                    receiver_port = int(self.users_dicc[user_to][1])
+                    try:
+                        my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                        my_socket.connect((receiver_ip, receiver_port))
+                        my_socket.send(bytes(request,'utf-8'))
+                        print("Sending to Server-- " + request)
+                    except ConnectionRefusedError:
+                        print("ERROR: Connection Refused")
+                else:
+                    reply = "SIP/2.0 404 User Not Found\r\n"
+                    ####PASAR PRINT AL LOG
+                    print("Sending to Client-- " + reply)
+                    self.wfile.write(bytes(reply, "utf-8"))
+
+            elif METHOD == "BYE":
+                self.json2registered()
+                user_to = request.split(':')[1].split(' ')[0]
+                if user_to in self.users_dicc.keys():
+                    receiver_ip = self.users_dicc[user_to][0]
+                    receiver_port = int(self.users_dicc[user_to][1])
+                    try:
+                        my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                        my_socket.connect((receiver_ip, receiver_port))
+                        my_socket.send(bytes(request,'utf-8'))
+                        print("Sending to Server-- " + request)
+                    except ConnectionRefusedError:
+                        print("ERROR: Connection Refused")
+                    #Recibo contestacion
+                    data = my_socket.recv(1024)
+                    reply = data.decode('utf-8')
+                    print("Receiving from server:" + reply)
+                    self.wfile.write(bytes(reply, 'utf-8'))
+                    print("Sending to Client-- " + reply)
+                else:
+                    reply = "SIP/2.0 404 User Not Found\r\n"
+                    ####PASAR PRINT AL LOG
+                    print("Sending to Client-- " + reply)
                     self.wfile.write(bytes(reply, "utf-8"))
 
             else:
