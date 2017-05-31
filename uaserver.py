@@ -62,6 +62,18 @@ proxy_port = info[3][1]['port']
 log_path = info[4][1]['path']
 audio_path = info[5][1]['path']
 
+#Procedimiento que genera una nueva entrada de log
+def do_log(entry):
+
+    log = open(log_path, 'a+')
+    log.write('\r\n' + time.strftime('%Y%m%d%H%M%S ', time.gmtime(time.time())) + entry)
+    log.close()
+
+#Procedimiento que borra el fichero de log
+def delete_log():
+    log= open(log_path, 'w')
+    log.close()
+
 class SIP_UA_Handler(socketserver.DatagramRequestHandler):
     """
     SIP User Agent server class
@@ -72,7 +84,9 @@ class SIP_UA_Handler(socketserver.DatagramRequestHandler):
             if not line:
                 break
             request = line.decode('utf-8')
-            print("\r\nReceiving from proxy-- " + request)
+            log_entry ="Received from "+proxy_ip+':'+str(proxy_port) +' '+request.replace('\r\n',' ')
+            do_log(log_entry)
+            print("\r\nReceived from proxy-- " + request)
             METHOD = request.split(' ')[0]
             if METHOD == 'INVITE':
                 self.wfile.write(b'SIP/2.0 100 Trying\r\n')
@@ -85,25 +99,41 @@ class SIP_UA_Handler(socketserver.DatagramRequestHandler):
                 reply += 't=0\r\n'
                 reply += 'm=audio ' + rtp_port + ' RTP\r\n'
                 self.wfile.write(bytes(reply,'utf-8'))
+                log_entry ="Sending to "+proxy_ip+':'+str(proxy_port) +' '+reply.replace('\r\n',' ')
+                do_log(log_entry)
                 print("Sending-- SIP/2.0 100 Trying\r\nSIP/2.0 180 Ring\r\n" + reply)
             elif METHOD == 'ACK':
                 aEjecutar = "./mp32rtp -i " + server_ip
                 aEjecutar += " -p " + rtp_port + " < " + audio_path
-                print("Vamos a ejecutar", aEjecutar)
                 os.system(aEjecutar)
+                log_entry ="Running " + aEjecutar
+                do_log(log_entry)
+                print("Vamos a ejecutar", aEjecutar)
             elif METHOD == 'BYE':
                 reply = "SIP/2.0 200 OK\r\n"
                 self.wfile.write(bytes(reply,'utf-8'))
+                log_entry ="Sending to "+proxy_ip+':'+str(proxy_port) +' '+reply.replace('\r\n',' ')
+                do_log(log_entry)
                 print("Sending-- " + reply)
             else:
                 reply = "SIP/2.0 405 Method Not Allowed\r\n"
                 self.wfile.write(bytes(reply,'utf-8'))
+                log_entry ="Sending to "+proxy_ip+':'+str(proxy_port) +' '+reply.replace('\r\n',' ')
+                do_log(log_entry)
                 print("Sending-- " + reply)
 
 if __name__ == "__main__":
+    #delete_log()
+    #serv = socketserver.UDPServer(('', int(server_port)), SIPRegisterHandler)
     serv = socketserver.UDPServer(('', int(server_port)), SIP_UA_Handler)
+    log_entry = "Starting server..."
+    log_entry = log_entry.replace('\n',' ')
+    do_log(log_entry)
     print("\r\nServer " + username + " listening at port: " + server_port + "...")
     try:
         serv.serve_forever()
     except KeyboardInterrupt:
-        print("Finishing server...")
+        log_entry = "Finishing server..."
+        log_entry = log_entry.replace('\r\n',' ')
+        do_log(log_entry)
+        print("Finishing server.")
