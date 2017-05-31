@@ -31,19 +31,15 @@ class Server_Constructor(ContentHandler):
 
     def get_tags(self):
         return self.tags
-#
+
 #Condiciones de entrada
-#
 if len(sys.argv) != 2:
 	sys.exit("Usage: python3 uaserver.py config")
-#
+
 #Extracción de lo introducido por la linea de comandos
-#
-#Fichero de configuración del UA
-CONFIG = sys.argv[1]
-#
+CONFIG = sys.argv[1]#Fichero de configuración del UA
+
 #Inicio del manejador
-#
 #Manejo del fichero de configuración
 parser = make_parser()
 server_handler = Server_Constructor()
@@ -124,7 +120,6 @@ class SIP_UA_Handler(socketserver.DatagramRequestHandler):
 
 if __name__ == "__main__":
     #delete_log()
-    #serv = socketserver.UDPServer(('', int(server_port)), SIPRegisterHandler)
     serv = socketserver.UDPServer(('', int(server_port)), SIP_UA_Handler)
     log_entry = "Starting server..."
     log_entry = log_entry.replace('\n',' ')
