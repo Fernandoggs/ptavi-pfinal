@@ -58,9 +58,6 @@ client_handler = UA_Constructor()
 parser.setContentHandler(client_handler)
 parser.parse(open(CONFIG))
 info = client_handler.get_tags()
-#######TRAZA#######
-##print(info)
-#######TRAZA#######
 
 #Extracción de la información de configuración
 username = info[0][1]['username']
@@ -84,9 +81,7 @@ try:
     #Actuaciones en función del método especificado por el cliente
     if METHOD == "REGISTER":
 	    #Estructura de mensaje REGISTER
-	    Request = 'REGISTER sip:'
-	    Request += username + ':' + server_port
-	    Request += ' SIP/2.0\r\n'
+	    Request = 'REGISTER sip:' +username + ':' + server_port + ' SIP/2.0\r\n'
 	    Request += 'Expires:' + OPTION + '\r\n'
 
     elif METHOD == "INVITE":
@@ -115,40 +110,50 @@ try:
     my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
     #Recibo contestacion
     data = my_socket.recv(1024)
-    Reply = data.decode('utf-8')
+    reply = data.decode('utf-8')
     ####PASAR PRINT AL LOG
-    print('Recibido -- ', Reply)
+    print('Recibido -- ', reply)
     ####PASAR PRINT AL LOG
-    code = Reply.split(' ')[1]
-    if Reply[1] == '401':
+    code = reply.split(' ')[1].split(' ')[0]
+    #print('Code--> ' + code)
+    #if reply.startswith('SIP/2.0 401 Unauthorized'):
+    if code == "401":
         aux = hashlib.md5()
-        nonce = Reply.split('=')[1]
+        nonce = reply.split('=')[1]
         aux.update(bytes(password,'utf-8') + bytes(nonce,'utf-8'))
         response = aux.hexdigest()
 	    #Estructura de REGISTER con autorizacion
-        Request = 'REGISTER sip:'
-        Request += username + ':' + server_port
-        Request += ' SIP/2.0\r\n'
-        Request += 'Expires:' + OPTION + '\r\n'
-        Request += 'Authorization: Digest response=' + response
+        Request = 'REGISTER sip:'+username+':'+server_port+' SIP/2.0\r\n'
+        Request += 'Expires:'+OPTION+'\r\n'+ 'Authorization: Digest response='
+        Request += response + '\r\n'
 	    ####PASAR PRINT AL LOG
         print("Sending REGISTER (+login): " , Request)
 	    ####PASAR PRINT AL LOG
         #Envio REGISTER con Autorización al Proxy
-        my_socket.send(bytes(Request, 'utf-8') + b'\r\n')
+        my_socket.send(bytes(Request, 'utf-8'))
         #Recibo contestacion
         data = my_socket.recv(1024)
-        Reply = data.decode('utf-8')
-        ####PASAR PRINT AL LOG
-        print('Recibido -- ', Reply)
-    else:
-        ####PASAR PRINT AL LOG
-        print('Recibo otra cosa')
+        reply = data.decode('utf-8')
+    #elif reply.startswith("SIP/2.0 100 Trying\r\n"):
+    elif code == "100":
+        answer = reply.split()
+        if answer[7] == "200":
+            receiver = answer[12].split('=')[1]
+            request = "ACK sip:" + receiver + " SIP/2.0"
+            print("Sending ACK")
+            my_socket.send(bytes(request, 'utf-8'))
+            aEjecutarVLC = 'cvlc trp://@127.0.0.1:' + rtp_port +'> /dev/null &'
+            print("Vamos a ejecutar " + aEjecutarVLC)
+            os.system(aEjecutarVLC)
+            aEjecutar = "./mp32rtp -i " + server_ip
+            aEjecutar += " -p " + rtp_port + " < " + audio_path
+            print("Vamos a ejecutar", aEjecutar)
+            os.system(aEjecutar)
 
     print("Finishing socket...")
 
 except ConnectionRefusedError:
-    print("ERROR")
+    print("ERROR - Connection refused")
     print("Finishing socket")
 
 #Cerramos todo
