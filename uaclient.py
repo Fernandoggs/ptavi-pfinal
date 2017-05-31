@@ -114,13 +114,13 @@ try:
     delete_log()
     entry = "Starting client: "+username
     do_log(entry)
-    entry = "Socket connected to Proxy "+proxy_ip+":"+str(proxy_port)
+    entry = "Socket connected to Proxy "+proxy_ip+":"+str(proxy_port)+"..."
     do_log(entry)
     #Envio Request al Proxy
     my_socket.send(bytes(request, 'utf-8') + b'\r\n')
     log_entry ="Sending to "+proxy_ip+':'+str(proxy_port) +' '+request.replace('\r\n',' ')
     do_log(log_entry)
-    print("Sendin to proxy-- " , request)
+    print("Sending to proxy-- " , request)
     #Recibo contestacion
     data = my_socket.recv(1024)
     reply = data.decode('utf-8')
@@ -128,38 +128,46 @@ try:
     do_log(log_entry)
     print('Received -- ', reply)
     code = reply.split(' ')[1].split(' ')[0]
-    #print('Code--> ' + code)
-    #if reply.startswith('SIP/2.0 401 Unauthorized'):
     if code == "401":
         aux = hashlib.md5()
         nonce = reply.split('=')[1]
         aux.update(bytes(password,'utf-8') + bytes(nonce,'utf-8'))
         response = aux.hexdigest()
 	    #Estructura de REGISTER con autorizacion
-        Request = 'REGISTER sip:'+username+':'+server_port+' SIP/2.0\r\n'
-        Request += 'Expires:'+OPTION+'\r\n'+ 'Authorization: Digest response='
-        Request += response + '\r\n'
-	    ####PASAR PRINT AL LOG
-        print("Sending REGISTER (+login): " , Request)
-	    ####PASAR PRINT AL LOG
+        request = 'REGISTER sip:'+username+':'+server_port+' SIP/2.0\r\n'
+        request += 'Expires:'+OPTION+'\r\n'+ 'Authorization: Digest response='
+        request += response + '\r\n'
         #Envio REGISTER con Autorización al Proxy
-        my_socket.send(bytes(Request, 'utf-8'))
+        my_socket.send(bytes(request, 'utf-8'))
+        log_entry ="Sending to "+proxy_ip+':'+str(proxy_port) +' '+request.replace('\r\n',' ')
+        do_log(log_entry)
+        print("Sending REGISTER (+login): " , request)
         #Recibo contestacion
         data = my_socket.recv(1024)
         reply = data.decode('utf-8')
+        log_entry ="Received from "+proxy_ip+':'+str(proxy_port) +' '+reply.replace('\r\n',' ')
+        do_log(log_entry)
+        print('Received -- ', reply)
+
     #elif reply.startswith("SIP/2.0 100 Trying\r\n"):
     elif code == "100":
         answer = reply.split()
         if answer[7] == "200":
             receiver = answer[12].split('=')[1]
             request = "ACK sip:" + receiver + " SIP/2.0"
-            print("Sending ACK")
             my_socket.send(bytes(request, 'utf-8'))
+            log_entry ="Sending to "+proxy_ip+':'+str(proxy_port) +' '+request.replace('\r\n',' ')
+            do_log(log_entry)
+            print("Sending ACK")
             aEjecutarVLC = 'cvlc trp://@127.0.0.1:' + rtp_port +'> /dev/null &'
+            log_entry ="Running " + aEjecutarVLC
+            do_log(log_entry)
             print("Vamos a ejecutar " + aEjecutarVLC)
             os.system(aEjecutarVLC)
             aEjecutar = "./mp32rtp -i " + server_ip
             aEjecutar += " -p " + rtp_port + " < " + audio_path
+            log_entry ="Running " + aEjecutarVLC
+            do_log(log_entry)
             print("Vamos a ejecutar", aEjecutar)
             os.system(aEjecutar)
     entry = "Finishing socket."
@@ -167,6 +175,10 @@ try:
     print("Finishing socket...")
 
 except ConnectionRefusedError:
+    entry = "ERROR - Connection refused"
+    do_log(entry)
+    entry = "Finishing socket."
+    do_log(entry)
     print("ERROR - Connection refused")
     print("Finishing socket")
 
