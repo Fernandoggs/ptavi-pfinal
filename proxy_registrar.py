@@ -34,27 +34,24 @@ class Proxy_Constructor(ContentHandler):
 
     def get_tags(self):
         return self.tags
-#
-#Condiciones de entrada
-#
+
+#Análisis de las condiciones de entrada
 if not len(sys.argv) != 1:
 	sys.exit("Usage: python3 proxy_registrar.py config")
-#
-#Extracción de lo introducido por la linea de comandos
-#
-#Fichero de configuración del UA
+    #entry = "Error opening command"
+    #do_log(entry)
+
+#Asignación de fichero de configuración
 CONFIG = sys.argv[1]
-#
-#Inicio del manejador
-#
-#Manejo del fichero de configuración
+
+#Inicio del manejador / Manejo del fichero de configuración
 parser = make_parser()
 proxy_handler = Proxy_Constructor()
 parser.setContentHandler(proxy_handler)
 parser.parse(open(CONFIG))
 info = proxy_handler.get_tags()
 
-#Extrae la informacion del fichero de configuración
+#Extracción de la informacion del fichero de configuración
 server_name = info[0][1]['name']
 server_ip = info[0][1]['ip']
 server_port = info[0][1]['port']
@@ -62,21 +59,33 @@ registered_fich = info[1][1]['path']
 passwd_fich = open(info[1][1]['passwdpath'],'r')
 log_fich = info[2][1]['path']
 
+#Extracción de la informacion del archivo de contraseñas
+passwords = passwd_fich.readlines()
 
-passwords = passwd_fich.readlines()#Extrae la informacion del archivo de contraseñas
-nonce = random.randint(0,99999999999999999)#Genera el nonce como num aleatorio
+#Generación del nonce como un numero aleatorio
+nonce = random.randint(0,99999999999999999)
 
+#Procedimiento que genera una nueva entrada de log
+def do_log(entry):
+
+    log = open(log_fich, 'a+')
+    log.write('\r\n' + time.strftime('%Y%m%d%H%M%S ', time.gmtime(time.time())) + entry)
+    log.close()
+    #log= open(log_fich, 'w')
+    #log.close()
+
+#Manejador de Registro SIP
 class SIPRegisterHandler(socketserver.DatagramRequestHandler):
     """
     SIP REGISTER server class
     """
     users_dicc = {}
 
-    #Abro el fichero de registro de clientes en modo escritura
+    #Procedimiento que abre el fichero de registro de clientes en modo escritura
     def register2json(self):
         json.dump(self.users_dicc,open(registered_fich,'w'))
 
-    #Compruebo si existe el fichero y lo leo
+    #Procedimiento que comprueba si existe el fichero de registro y lo lee
     def json2registered(self):
         try:
             with open(registered_fich) as registered_file:
@@ -93,6 +102,8 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                 aux_list.append(user)
         for client in aux_list:
             del self.users_dicc[client]
+            #entry = "Deleting: " + client
+            #do_log(entry)
             print('Deleting: ',client)
 
 
@@ -103,14 +114,14 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
         self.time_expire = float(time.time()) + float(client_expire)
         self.client_info=[client_address,client_port,self.time,self.time_expire]
         self.users_dicc[register_user] = self.client_info
+        #Comprobación de si ha expirado el tiempo de conexión de algún usuario
         if int(client_expire) == 0:
                 del self.users_dicc[register_user]
         self.wfile.write(b"SIP/2.0 200 0K\r\n")
         self.delete()
         self.register2json()
 
-
-
+    #Parte principal del manejador
     def handle(self):
         #Registra ip y puerto del cliente (client_address)
         self.json2registered()
@@ -122,16 +133,18 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
             if not line:
                 break
             request = line.decode('utf-8')
+            entry ="Receiving from "+client_ip+':'+str(client_port) +' '+request.replace('\r\n',' ')
+            do_log(entry)
             print("\r\nReceiving from Client-- " + request)
-            ###HACER LOG
             METHOD = request.split(' ')[0]
+
             if METHOD == 'REGISTER':
                 if 'Authorization:' in request:
                     response = request.split('=')[1].split('\r')[0]
                     user = request.split(':')[1]
                     user_port = request.split('.com:')[1].split(' S')[0]
                     user_exp = request.split('s:')[1].split('Au')[0]
-                    # Genero el response q tengo q comprobar con el response recibido del UA
+                    #Genera el response y lo compara con el recibido desde el UA
                     for line in passwords:
                         if line.split()[0] == user:
                             aux = hashlib.md5()
@@ -146,7 +159,6 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                             ####PASAR PRINT AL LOG
                             print("Sending to Client-- " + reply)
                             self.wfile.write(bytes(reply, "utf-8"))
-
                 else:
                     reply = "SIP/2.0 401 Unauthorized\r\n"
                     reply += "WWW Authenticate: nonce=" + str(nonce)
@@ -155,7 +167,6 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                     print("Sending to Client-- " + reply)
                     ####PASAR PRINT AL LOG
                     self.wfile.write(bytes(reply, "utf-8"))
-
             elif METHOD == 'INVITE':
                 self.json2registered()
                 user_to = request.split(':')[1].split(' ')[0]
@@ -234,7 +245,10 @@ class SIPRegisterHandler(socketserver.DatagramRequestHandler):
                 self.wfile.write(bytes(reply, "utf-8"))
 
 if __name__ == "__main__":
+
     serv = socketserver.UDPServer(('', int(server_port)), SIPRegisterHandler)
+    entry = "Starting..."
+    do_log(entry)
     print("\r\nServer " + server_name + " listening at port: " + server_port + "...")
     #Se crea esta excepción para q al salir del servidor con crtl+c salga el mensaje de Finalizado
     try:
