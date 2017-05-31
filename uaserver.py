@@ -75,7 +75,7 @@ class SIP_UA_Handler(socketserver.DatagramRequestHandler):
             print("\r\nReceiving from proxy-- " + request)
             METHOD = request.split(' ')[0]
             if METHOD == 'INVITE':
-                self.wfile.write(b"SIP/2.0 100 Trying\r\n")
+                self.wfile.write(b'SIP/2.0 100 Trying\r\n')
                 self.wfile.write(b"SIP/2.0 180 Ring\r\n")
                 reply = "SIP/2.0 200 OK\r\n"
                 reply += 'Content-Type: application/sdp\r\n\r\n'
@@ -85,7 +85,7 @@ class SIP_UA_Handler(socketserver.DatagramRequestHandler):
                 reply += 't=0\r\n'
                 reply += 'm=audio ' + rtp_port + ' RTP\r\n'
                 self.wfile.write(bytes(reply,'utf-8'))
-                print("Sending-- " + reply)
+                print("Sending-- SIP/2.0 100 Trying\r\nSIP/2.0 180 Ring\r\n" + reply)
             elif METHOD == 'ACK':
                 aEjecutar = "./mp32rtp -i " + server_ip
                 aEjecutar += " -p " + rtp_port + " < " + audio_path
