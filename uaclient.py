@@ -35,25 +35,16 @@ class UA_Constructor(ContentHandler):
     def get_tags(self):
         return self.tags
 
-#
 #Condiciones de entrada
-#
 if len(sys.argv) != 4:
 	sys.exit("Usage: python uaclient.py config method option")
-#
-#Extracción de lo introducido por la linea de comandos
-#
-#Fichero de configuración del UA
-CONFIG = sys.argv[1]
-#Metodo que quiere enviar el cliente
-METHOD = sys.argv[2]
-#Opción elegida de inicio
-OPTION = sys.argv[3]
 
-#
+#Extracción de lo introducido por la linea de comandos
+CONFIG = sys.argv[1] #Fichero de configuración del UA
+METHOD = sys.argv[2] #Método que quiere enviar el cliente
+OPTION = sys.argv[3] #Opción elegida de inicio
+
 #Inicio del manejador
-#
-#Manejo del fichero de configuración
 parser = make_parser()
 client_handler = UA_Constructor()
 parser.setContentHandler(client_handler)
@@ -73,7 +64,6 @@ audio_path = info[5][1]['path']
 
 #Procedimiento que genera una nueva entrada de log
 def do_log(entry):
-
     log = open(log_path, 'a+')
     log.write('\r\n' + time.strftime('%Y%m%d%H%M%S ', time.gmtime(time.time())) + entry)
     log.close()
@@ -149,7 +139,6 @@ try:
         do_log(log_entry)
         print('Received -- ', reply)
 
-    #elif reply.startswith("SIP/2.0 100 Trying\r\n"):
     elif code == "100":
         answer = reply.split()
         if answer[7] == "200":
@@ -170,9 +159,6 @@ try:
             do_log(log_entry)
             print("Vamos a ejecutar", aEjecutar)
             os.system(aEjecutar)
-    entry = "Finishing socket."
-    do_log(entry)
-    print("Finishing socket...")
 
 except ConnectionRefusedError:
     entry = "ERROR - Connection refused"
@@ -183,4 +169,7 @@ except ConnectionRefusedError:
     print("Finishing socket")
 
 #Cerramos todo
+entry = "Finishing socket."
+do_log(entry)
+print("Finishing socket...")
 my_socket.close()
